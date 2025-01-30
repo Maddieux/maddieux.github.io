@@ -82,6 +82,42 @@
                 margin: 20px auto;
             }
         }
+        #results {
+            position: relative;
+            padding-bottom: 40px; /* Space for copy button */
+        }
+        
+        .copy-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #001100;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #002200;
+        }
+        
+        .cp-row {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .sb-row {
+            color: #009900;
+        }
+        
+        .dash-line {
+            color: #004400;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -128,16 +164,28 @@
             }
         }
 
-        function updateResults() {
-            const results = document.getElementById('results');
-            results.innerHTML = sessionData.map(entry => 
-                `<div class="session-row">
-                    <span>${entry.phase.padEnd(4, ' ')}</span>
-                    <span>│ ${formatTime(entry.time)}</span>
-                </div>`
-            ).join('');
-        }
 
+         function updateResults() {
+            const results = document.getElementById('results');
+            const formattedData = sessionData.map(entry => {
+                const isCP = entry.phase.startsWith('CP');
+                const dashes = '_'.repeat(8 - entry.phase.length);
+                return `
+                    <div class="session-row ${isCP ? 'cp-row' : 'sb-row'}">
+                        <span>${entry.phase}</span>
+                        <span>${dashes}></span>
+                        <span>${formatTime(entry.time)}</span>
+                    </div>
+                    ${!isCP ? '<div class="dash-line">―'.repeat(30)+'</div>' : ''}
+                `;
+            }).join('');
+            
+            results.innerHTML = `
+                ${formattedData}
+                <button class="copy-btn" onclick="copyResults()">⎘ Copy Results</button>
+            `;
+        }
+        
         function updateTimers() {
             const now = Date.now();
             const totalElapsed = now - sessionStartTime;
@@ -223,6 +271,23 @@
             document.getElementById('phaseStatus').textContent = "Session completed!";
         }
 
+
+       
+
+        // Add copy function
+        function copyResults() {
+            const text = sessionData.map(entry => {
+                const dashes = '-'.repeat(10 - entry.phase.length);
+                return `${entry.phase}${dashes} ${formatTime(entry.time)}`;
+            }).join('\n');
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => btn.textContent = '⎘ Copy Results', 2000);
+            });
+        }
+        
         // Event listeners
         document.getElementById('mainBtn').addEventListener('click', function() {
             this.textContent === 'Begin!' ? startSession() : recordPhase();

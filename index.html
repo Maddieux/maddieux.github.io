@@ -176,7 +176,7 @@
                         <span>${dashes}></span>
                         <span>${formatTime(entry.time)}</span>
                     </div>
-                    ${!isCP ? '<div class="dash-line">―'.repeat(30)+'</div>' : ''}
+                    ${!isCP ? '<div class="dash-line">―'.repeat(3)+'</div>' : ''}
                 `;
             }).join('');
             
@@ -277,7 +277,7 @@
         // Add copy function
         function copyResults() {
             const text = sessionData.map(entry => {
-                const dashes = '-'.repeat(10 - entry.phase.length);
+                const dashes = '_'.repeat(10 - entry.phase.length);
                 return `${entry.phase}${dashes} ${formatTime(entry.time)}`;
             }).join('\n');
 

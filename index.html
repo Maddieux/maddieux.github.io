@@ -275,18 +275,24 @@
        
 
         // Add copy function
-        function copyResults() {
-            const text = sessionData.map(entry => {
+    function copyResults() {
+        const now = new Date();
+        const dateString = `Session recorded: ${now.toLocaleString()}`;
+        
+        const text = [
+            dateString,
+            ...sessionData.map(entry => {
                 const dashes = '_'.repeat(6 - entry.phase.length);
                 return `${entry.phase}${dashes} ${formatTime(entry.time)}`;
-            }).join('\n');
+            })
+        ].join('\n');
 
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = '✓ Copied!';
-                setTimeout(() => btn.textContent = '⎘ Copy Results', 2000);
-            });
-        }
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => btn.textContent = '⎘ Copy Results', 2000);
+        });
+    }
         
         // Event listeners
         document.getElementById('mainBtn').addEventListener('click', function() {

@@ -63,6 +63,25 @@
             padding: 4px 0;
             border-bottom: 1px solid #004400;
         }
+                /* Mobile optimizations */
+        @media (max-width: 768px) {
+            #timer {
+                font-size: 3em;
+            }
+            button {
+                padding: 15px 20px;
+                font-size: 1em;
+                width: 100%;
+            }
+            #controls {
+                width: 100%;
+                flex-direction: column;
+            }
+            #results {
+                width: 90%;
+                margin: 20px auto;
+            }
+        }
     </style>
 </head>
 <body>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Breathing Session Tracker</title>
+    <style>
+        body {
+            background-color: black;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+        #timer {
+            font-size: 4em;
+            margin: 20px;
+            letter-spacing: 2px;
+        }
+        #currentPhase {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        #phaseStatus {
+            font-size: 1.2em;
+            margin: 15px 0;
+            min-height: 1.5em;
+        }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.1em;
+            background: transparent;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover:not(:disabled) {
+            background: #002200;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #results {
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-top: 20px;
+            min-width: 300px;
+        }
+        .session-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid #004400;
+        }
+    </style>
+</head>
+<body>
+    <div id="timer">00:00:00</div>
+    <div id="currentPhase">Current Phase: 00:00:00</div>
+    <div id="phaseStatus">Ready to begin</div>
+    
+    <div id="controls">
+        <button id="mainBtn">Begin!</button>
+        <button id="finishBtn" disabled>Finish Session</button>
+        <button id="finalCpBtn" disabled>Final CP</button>
+        <button id="endBtn" disabled>End Session</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let sessionStartTime;
+        let phaseStartTime;
+        let timer;
+        let currentPhase = 0; // 0 = CP, 1 = SB
+        let phaseCount = 0;
+        let sessionData = [];
+        let running = false;
+        let finalCpStarted = false;
+
+        function formatTime(ms) {
+            const date = new Date(ms);
+            return [
+                date.getUTCMinutes().toString().padStart(2, '0'),
+                date.getUTCSeconds().toString().padStart(2, '0'),
+                Math.floor(date.getUTCMilliseconds()/10).toString().padStart(2, '0')
+            ].join(':');
+        }
+
+        function updatePhaseStatus() {
+            const statusElement = document.getElementById('phaseStatus');
+            if (finalCpStarted) {
+                statusElement.textContent = "Final Controlpause in progress";
+            } else if (currentPhase === 0) {
+                statusElement.textContent = `Controlpause ${phaseCount} (Hold your breath)`;
+            } else {
+                statusElement.textContent = "Shallow Breathing (Breathe normally)";
+            }
+        }
+
+        function updateResults() {
+            const results = document.getElementById('results');
+            results.innerHTML = sessionData.map(entry => 
+                `<div class="session-row">
+                    <span>${entry.phase.padEnd(4, ' ')}</span>
+                    <span>│ ${formatTime(entry.time)}</span>
+                </div>`
+            ).join('');
+        }
+
+        function updateTimers() {
+            const now = Date.now();
+            const totalElapsed = now - sessionStartTime;
+            document.getElementById('timer').textContent = formatTime(totalElapsed);
+
+            if (running) {
+                const phaseElapsed = now - phaseStartTime;
+                document.getElementById('currentPhase').textContent = 
+                    `Current Phase: ${formatTime(phaseElapsed)}`;
+            }
+        }
+
+        function startSession() {
+            sessionStartTime = Date.now();
+            phaseStartTime = sessionStartTime;
+            running = true;
+            timer = setInterval(updateTimers, 10);
+            
+            document.getElementById('mainBtn').textContent = 'CP0';
+            document.getElementById('mainBtn').disabled = false;
+            document.getElementById('finishBtn').disabled = false;
+            
+            sessionData = [];
+            phaseCount = 0;
+            currentPhase = 0;
+            finalCpStarted = false;
+            updatePhaseStatus();
+            updateResults();
+        }
+
+        function recordPhase() {
+            if (!running) return;
+            
+            const phaseElapsed = Date.now() - phaseStartTime;
+            const phaseName = currentPhase === 0 ? `CP${phaseCount}` : `SB${phaseCount}`;
+            sessionData.push({ phase: phaseName, time: phaseElapsed });
+            
+            currentPhase = 1 - currentPhase;
+            if (currentPhase === 0) phaseCount++;
+            
+            phaseStartTime = Date.now();
+            document.getElementById('mainBtn').textContent = 
+                currentPhase === 0 ? `CP${phaseCount}` : `SB${phaseCount}`;
+            
+            updatePhaseStatus();
+            updateResults();
+        }
+
+        function finishSession() {
+            running = false;
+            clearInterval(timer);
+            document.getElementById('mainBtn').disabled = true;
+            document.getElementById('finishBtn').disabled = true;
+            document.getElementById('finalCpBtn').disabled = false;
+            document.getElementById('phaseStatus').textContent = "Session finished - record Final CP";
+        }
+
+        function recordFinalCp() {
+            sessionStartTime = Date.now();
+            phaseStartTime = sessionStartTime;
+            running = true;
+            timer = setInterval(updateTimers, 10);
+            finalCpStarted = true;
+            
+            document.getElementById('finalCpBtn').disabled = true;
+            document.getElementById('endBtn').disabled = false;
+            document.getElementById('mainBtn').disabled = true;
+            updatePhaseStatus();
+        }
+
+        function endSession() {
+            running = false;
+            clearInterval(timer);
+            const phaseElapsed = Date.now() - phaseStartTime;
+            sessionData.push({ phase: 'F_CP', time: phaseElapsed });
+            
+            updateResults();
+            document.getElementById('mainBtn').textContent = 'Begin!';
+            document.getElementById('mainBtn').disabled = false;
+            document.getElementById('endBtn').disabled = true;
+            document.getElementById('timer').textContent = '00:00:00';
+            document.getElementById('currentPhase').textContent = 'Current Phase: 00:00:00';
+            document.getElementById('phaseStatus').textContent = "Session completed!";
+        }
+
+        // Event listeners
+        document.getElementById('mainBtn').addEventListener('click', function() {
+            this.textContent === 'Begin!' ? startSession() : recordPhase();
+        });
+        document.getElementById('finishBtn').addEventListener('click', finishSession);
+        document.getElementById('finalCpBtn').addEventListener('click', recordFinalCp);
+        document.getElementById('endBtn').addEventListener('click', endSession);
+    </script>
+</body>
+</html>
